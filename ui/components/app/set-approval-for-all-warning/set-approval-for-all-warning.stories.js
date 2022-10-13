@@ -1,0 +1,38 @@
+/* eslint-disable react/prop-types */
+import React from 'react';
+import SetApproveForAllWarning from '.';
+
+export default {
+  title: 'Components/App/SetApproveForAllWarning',
+  id: __filename,
+  argTypes: {
+    collectionName: {
+      control: 'text',
+    },
+    name: {
+      control: 'text',
+    },
+    senderAddress: {
+      control: 'text',
+    },
+    total: {
+      control: 'text',
+    },
+    onSubmit: {
+      action: 'onSubmit',
+    },
+    onCancel: {
+      action: 'onCancel',
+    },
+  },
+  args: {
+    collectionName: 'Test collection',
+    name: 'Account 1',
+    senderAddress: '0xee014609ef9e09776ac5fe00bdbfef57bcdefebb',
+    total: '6',
+  },
+};
+
+export const DefaultStory = (args) => <SetApproveForAllWarning {...args} />;
+
+DefaultStory.storyName = 'Default';
