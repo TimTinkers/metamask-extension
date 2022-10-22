@@ -201,6 +201,9 @@ export default class MetamaskController extends EventEmitter {
 
     this.controllerMessenger = new ControllerMessenger();
 
+    // instance of a class that wraps the extension's storage local API.
+    this.localStoreApiWrapper = opts.localStore;
+
     // observable state store
     this.store = new ComposableObservableStore({
       state: initState,
@@ -247,7 +250,9 @@ export default class MetamaskController extends EventEmitter {
 
     this.tokenListController = new TokenListController({
       chainId: hexToDecimal(this.networkController.getCurrentChainId()),
-      preventPollingOnNetworkRestart: true,
+      preventPollingOnNetworkRestart: initState.TokenListController
+        ? initState.TokenListController.preventPollingOnNetworkRestart
+        : true,
       onNetworkStateChange: (cb) => {
         this.networkController.store.subscribe((networkState) => {
           const modifiedNetworkState = {
@@ -654,7 +659,7 @@ export default class MetamaskController extends EventEmitter {
     ///: BEGIN:ONLY_INCLUDE_IN(flask)
     this.snapExecutionService = new IframeExecutionService({
       iframeUrl: new URL(
-        'https://metamask.github.io/iframe-execution-environment/0.8.0',
+        'https://metamask.github.io/iframe-execution-environment/0.9.1',
       ),
       messenger: this.controllerMessenger.getRestricted({
         name: 'ExecutionService',
@@ -2161,8 +2166,8 @@ export default class MetamaskController extends EventEmitter {
         ethQuery,
       );
 
-      const primaryKeyring =
-        keyringController.getKeyringsByType('HD Key Tree')[0];
+      const [primaryKeyring] =
+        keyringController.getKeyringsByType('HD Key Tree');
       if (!primaryKeyring) {
         throw new Error('MetamaskController - No HD Key Tree found');
       }
@@ -2287,8 +2292,7 @@ export default class MetamaskController extends EventEmitter {
     });
 
     // Accounts
-    const hdKeyring =
-      this.keyringController.getKeyringsByType('HD Key Tree')[0];
+    const [hdKeyring] = this.keyringController.getKeyringsByType('HD Key Tree');
     const simpleKeyPairKeyrings =
       this.keyringController.getKeyringsByType('Simple Key Pair');
     const hdAccounts = await hdKeyring.getAccounts();
@@ -2385,7 +2389,6 @@ export default class MetamaskController extends EventEmitter {
    * @type Identity
    * @property {string} name - The account nickname.
    * @property {string} address - The account's ethereum address, in lower case.
-   * @property {boolean} mayBeFauceting - Whether this account is currently
    * receiving funds from our automatic Ropsten faucet.
    */
 
@@ -2394,7 +2397,7 @@ export default class MetamaskController extends EventEmitter {
    */
   selectFirstIdentity() {
     const { identities } = this.preferencesController.store.getState();
-    const address = Object.keys(identities)[0];
+    const [address] = Object.keys(identities);
     this.preferencesController.setSelectedAddress(address);
   }
 
@@ -2402,7 +2405,7 @@ export default class MetamaskController extends EventEmitter {
    * Gets the mnemonic of the user's primary keyring.
    */
   getPrimaryKeyringMnemonic() {
-    const keyring = this.keyringController.getKeyringsByType('HD Key Tree')[0];
+    const [keyring] = this.keyringController.getKeyringsByType('HD Key Tree');
     if (!keyring.mnemonic) {
       throw new Error('Primary keyring mnemonic unavailable.');
     }
@@ -2433,9 +2436,7 @@ export default class MetamaskController extends EventEmitter {
           'MetamaskController:getKeyringForDevice - Unknown device',
         );
     }
-    let keyring = await this.keyringController.getKeyringsByType(
-      keyringName,
-    )[0];
+    let [keyring] = await this.keyringController.getKeyringsByType(keyringName);
     if (!keyring) {
       keyring = await this.keyringController.addNewKeyring(keyringName);
     }
@@ -2635,8 +2636,8 @@ export default class MetamaskController extends EventEmitter {
    * @returns {} keyState
    */
   async addNewAccount(accountCount) {
-    const primaryKeyring =
-      this.keyringController.getKeyringsByType('HD Key Tree')[0];
+    const [primaryKeyring] =
+      this.keyringController.getKeyringsByType('HD Key Tree');
     if (!primaryKeyring) {
       throw new Error('MetamaskController - No HD Key Tree found');
     }
@@ -2679,8 +2680,8 @@ export default class MetamaskController extends EventEmitter {
    * encoded as an array of UTF-8 bytes.
    */
   async verifySeedPhrase() {
-    const primaryKeyring =
-      this.keyringController.getKeyringsByType('HD Key Tree')[0];
+    const [primaryKeyring] =
+      this.keyringController.getKeyringsByType('HD Key Tree');
     if (!primaryKeyring) {
       throw new Error('MetamaskController - No HD Key Tree found');
     }
@@ -2804,12 +2805,12 @@ export default class MetamaskController extends EventEmitter {
       'Simple Key Pair',
       [privateKey],
     );
-    const accounts = await keyring.getAccounts();
+    const [firstAccount] = await keyring.getAccounts();
     // update accounts in preferences controller
     const allAccounts = await this.keyringController.getAccounts();
     this.preferencesController.setAddresses(allAccounts);
     // set new account as selected
-    await this.preferencesController.setSelectedAddress(accounts[0]);
+    await this.preferencesController.setSelectedAddress(firstAccount);
   }
 
   // ---------------------------------------------------------------------------
@@ -2875,7 +2876,7 @@ export default class MetamaskController extends EventEmitter {
     if (requestedAccount) {
       account = requestedAccount;
     } else {
-      account = (await this.keyringController.getAccounts())[0];
+      [account] = await this.keyringController.getAccounts();
     }
 
     return this.keyringController.exportAppKeyForAddress(account, subject);
@@ -3484,7 +3485,15 @@ export default class MetamaskController extends EventEmitter {
     this.emit('controllerConnectionChanged', this.activeControllerConnections);
 
     // set up postStream transport
-    outStream.on('data', createMetaRPCHandler(api, outStream));
+    outStream.on(
+      'data',
+      createMetaRPCHandler(
+        api,
+        outStream,
+        this.store,
+        this.localStoreApiWrapper,
+      ),
+    );
     const handleUpdate = (update) => {
       if (outStream._writableState.ended) {
         return;
@@ -3748,7 +3757,7 @@ export default class MetamaskController extends EventEmitter {
         ),
         getSnaps: this.controllerMessenger.call.bind(
           this.controllerMessenger,
-          'SnapController:getSnaps',
+          'SnapController:getPermitted',
           origin,
         ),
         requestPermissions: async (requestedPermissions) => {
