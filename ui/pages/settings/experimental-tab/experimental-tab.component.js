@@ -20,6 +20,8 @@ export default class ExperimentalTab extends PureComponent {
     openSeaEnabled: PropTypes.bool,
     eip1559V2Enabled: PropTypes.bool,
     setEIP1559V2Enabled: PropTypes.func,
+    transactionSecurityCheckEnabled: PropTypes.bool,
+    setTransactionSecurityCheckEnabled: PropTypes.func,
   };
 
   settingsRefs = Array(
@@ -190,9 +192,49 @@ export default class ExperimentalTab extends PureComponent {
     );
   }
 
+  renderTransactionSecurityCheckToggle() {
+    const { t } = this.context;
+    const {
+      transactionSecurityCheckEnabled,
+      setTransactionSecurityCheckEnabled,
+    } = this.props;
+
+    return (
+      <div ref={this.settingsRefs[1]} className="settings-page__content-row">
+        <div className="settings-page__content-item">
+          <span>{t('transactionSecurityCheck')}</span>
+          <div className="settings-page__content-description">
+            {t('transactionSecurityCheckDescription')}
+          </div>
+        </div>
+        <div className="settings-page__content-item">
+          <div className="settings-page__content-item-col">
+            <ToggleButton
+              value={transactionSecurityCheckEnabled}
+              onToggle={(value) => {
+                this.context.trackEvent({
+                  category: EVENT.CATEGORIES.SETTINGS,
+                  event: 'Enabled/Disable TransactionSecurityCheck',
+                  properties: {
+                    action: 'Enabled/Disable TransactionSecurityCheck',
+                    legacy_event: true,
+                  },
+                });
+                setTransactionSecurityCheckEnabled(!value);
+              }}
+              offLabel={t('off')}
+              onLabel={t('on')}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   render() {
     return (
       <div className="settings-page__body">
+        {this.renderTransactionSecurityCheckToggle()}
         {this.renderOpenSeaEnabledToggle()}
         {this.renderCollectibleDetectionToggle()}
         {this.renderEIP1559V2EnabledToggle()}
