@@ -71,7 +71,7 @@ import {
 import { isEqualCaseInsensitive } from '../../shared/modules/string-utils';
 import { hexToDecimal } from '../../shared/lib/metamask-controller-utils';
 import { formatMoonpaySymbol } from '../helpers/utils/moonpay';
-import { getBalancesInSingleCall } from '../store/actions';
+import { getERC20Balance } from '../ducks/send/helpers';
 ///: BEGIN:ONLY_INCLUDE_IN(flask)
 import { SNAPS_VIEW_ROUTE } from '../helpers/constants/routes';
 import { getPermissionSubjects } from './permissions';
@@ -1297,17 +1297,33 @@ export function getIsAnyAccountWithBalanceOnNonTestNetwork(state) {
   return balancesOnNonTestNetworks.includes(false);
 }
 
+export async function getIsAnyTokenWithNonZeroBalance(state) {
+  const { tokens } = state.metamask;
+  const selectedAddress = getSelectedAddress(state);
+
+  if (tokens.length > 0) {
+    for (let i = 0; i < tokens.length; i++) {
+      const res = await getERC20Balance(tokens[i], selectedAddress);
+
+      if (res !== '0x0') {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export async function getShouldShowSeedPhraseReminder(state) {
-  const { tokens, seedPhraseBackedUp, dismissSeedBackUpReminder } =
-    state.metamask;
+  const { seedPhraseBackedUp, dismissSeedBackUpReminder } = state.metamask;
   const accountBalance = getCurrentEthBalance(state) ?? 0;
   const isTestNet = getIsTestnet(state);
   const isHardwareWalletConnected = isHardwareWallet(state);
   const isAnyAccountWithBalanceOnNonTestNetwork =
     getIsAnyAccountWithBalanceOnNonTestNetwork(state);
-  const tokenBalances =
-    tokens.length > 0 ? await getBalancesInSingleCall(tokens) : {};
-  const allTokensAreWithZeroBalance = isEqual(tokenBalances, {});
+  const isAnyTokenWithNonZeroBalance = await getIsAnyTokenWithNonZeroBalance(
+    state,
+  );
 
   return (
     !isHardwareWalletConnected &&
@@ -1315,7 +1331,7 @@ export async function getShouldShowSeedPhraseReminder(state) {
     seedPhraseBackedUp === false &&
     (parseInt(accountBalance, 16) > 0 ||
       isAnyAccountWithBalanceOnNonTestNetwork ||
-      !allTokensAreWithZeroBalance) &&
+      isAnyTokenWithNonZeroBalance) &&
     dismissSeedBackUpReminder === false
   );
 }
