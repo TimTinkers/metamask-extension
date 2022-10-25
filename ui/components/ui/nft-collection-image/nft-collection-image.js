@@ -5,21 +5,25 @@ import Box from '../box';
 import { COLORS, TEXT_ALIGN } from '../../../helpers/constants/design-system';
 import Identicon from '../identicon';
 import { getTokenList } from '../../../selectors';
+import { useCollectiblesCollections } from '../../../hooks/useCollectiblesCollections';
 
-export default function NftCollectionImage({
-  assetName,
-  tokenAddress,
-  collections = {},
-}) {
+export default function NftCollectionImage({ assetName, tokenAddress }) {
+  const { collections } = useCollectiblesCollections();
   const tokenList = useSelector(getTokenList);
   const nftTokenListImage = tokenList[tokenAddress.toLowerCase()]?.iconUrl;
 
-  const renderCollectionImageOrName = (collectionImage, collectionName) => {
-    if (collections.collectionName === assetName) {
-      return collectionName && collectionImage;
-    }
-    if (collectionImage) {
-      return <Identicon diameter={24} image={collectionImage} />;
+  const renderCollectionImageOrName = () => {
+    const collection = Object.values(collections).find(
+      ({ collectionName }) => collectionName === assetName,
+    );
+
+    if (collection?.collectionImage || nftTokenListImage) {
+      return (
+        <Identicon
+          diameter={24}
+          image={collection?.collectionImage || nftTokenListImage}
+        />
+      );
     }
     return (
       <Box
@@ -27,36 +31,15 @@ export default function NftCollectionImage({
         textAlign={TEXT_ALIGN.CENTER}
         className="collection-image-alt"
       >
-        {collectionName?.[0]?.toUpperCase() ?? null}
+        {assetName?.[0]?.toUpperCase() ?? null}
       </Box>
     );
   };
 
-  return <Box>{renderCollectionImageOrName(nftTokenListImage, assetName)}</Box>;
+  return <Box>{renderCollectionImageOrName()}</Box>;
 }
 
 NftCollectionImage.propTypes = {
-  collections: PropTypes.shape({
-    collectibles: PropTypes.arrayOf(
-      PropTypes.shape({
-        address: PropTypes.string.isRequired,
-        tokenId: PropTypes.string.isRequired,
-        name: PropTypes.string,
-        description: PropTypes.string,
-        image: PropTypes.string,
-        standard: PropTypes.string,
-        imageThumbnail: PropTypes.string,
-        imagePreview: PropTypes.string,
-        creator: PropTypes.shape({
-          address: PropTypes.string,
-          config: PropTypes.string,
-          profile_img_url: PropTypes.string,
-        }),
-      }),
-    ),
-    collectionImage: PropTypes.string,
-    collectionName: PropTypes.string,
-  }),
   assetName: PropTypes.string,
   tokenAddress: PropTypes.string,
 };
