@@ -39,7 +39,9 @@ const generateIconNames = async () => {
         getIconNameKebabCase(fileName)),
   );
 
-  return iconNames;
+  const iconNamesStringified = JSON.stringify(iconNames);
+
+  return iconNamesStringified;
 };
 
 module.exports = { generateIconNames };
