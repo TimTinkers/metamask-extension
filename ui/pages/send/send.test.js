@@ -42,6 +42,8 @@ jest.mock('react-router-dom', () => {
 
 setBackgroundConnection({
   getGasFeeTimeEstimate: jest.fn(),
+  getGasFeeEstimatesAndStartPolling: jest.fn(),
+  promisifiedBackground: jest.fn(),
 });
 
 jest.mock('ethers', () => {
