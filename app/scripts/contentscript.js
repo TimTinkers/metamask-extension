@@ -465,13 +465,12 @@ function logStreamDisconnectWarning(remoteLabel, error) {
 }
 
 /**
- * The function send message to inpage to notify it of extension stream connection
- * This is used as notification to replay any pending messages in MV3
+ * The function notifies inpage when the extension stream connection is ready. When the
+ * 'metamask_chainChanged' method is received from the extension, it implies that the
+ * background state is completely initialized and it is ready to process method calls.
+ * This is used as a notification to replay any pending messages in MV3.
  *
- * Message is sent to inpage when method 'metamask_chainChanged' is receined from extension,
- * this method signifies that background state is completley initislised and it is ready to process method calls.
- *
- * @param {string} msg - instance of message received
+ * @param {object} chunk - instance of message received
  */
 function extensionStreamMessageListener(msg) {
   if (
