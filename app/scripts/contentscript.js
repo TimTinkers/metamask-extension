@@ -470,7 +470,7 @@ function logStreamDisconnectWarning(remoteLabel, error) {
  * background state is completely initialized and it is ready to process method calls.
  * This is used as a notification to replay any pending messages in MV3.
  *
- * @param {object} chunk - instance of message received
+ * @param {object} msg - instance of message received
  */
 function extensionStreamMessageListener(msg) {
   if (
