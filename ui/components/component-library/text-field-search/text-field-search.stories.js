@@ -1,13 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
 
-import {
-  SIZES,
-  DISPLAY,
-  COLORS,
-  FLEX_DIRECTION,
-  ALIGN_ITEMS,
-  TEXT,
-} from '../../../helpers/constants/design-system';
+import { SIZES } from '../../../helpers/constants/design-system';
 
 import { TEXT_FIELD_SIZES, TEXT_FIELD_TYPES } from '../text-field';
 
@@ -42,11 +35,16 @@ export default {
     },
   },
   argTypes: {
+    searchIconProps: {
+      control: 'object',
+    },
     showClear: {
       control: 'boolean',
+      table: { category: 'text field props' },
     },
     value: {
       control: 'text',
+      table: { category: 'text field props' },
     },
     onChange: {
       action: 'onChange',
@@ -54,12 +52,15 @@ export default {
     },
     onClear: {
       action: 'onClear',
+      table: { category: 'text field props' },
     },
     clearIconProps: {
       control: 'object',
+      table: { category: 'text field props' },
     },
     clearButtonProps: {
       control: 'object',
+      table: { category: 'text field props' },
     },
     autoComplete: {
       control: 'boolean',
