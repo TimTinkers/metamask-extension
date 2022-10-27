@@ -1,0 +1,30 @@
+import { Story, Canvas, ArgsTable } from '@storybook/addon-docs';
+
+import { TextFieldSearch } from './text-field-search';
+
+# TextFieldSearch
+
+The `TextFieldSearch` allows users to enter text to search. It wraps the `TextField` component that adds a search icon to the left of the input.
+
+<Canvas>
+  <Story id="ui-components-component-library-text-field-search-text-field-search-stories-js--default-story" />
+</Canvas>
+
+## Props
+
+The `TextFieldSearch` accepts all props below as well as all [Box](/docs/ui-components-ui-box-box-stories-js--default-story#props), [TextField](/docs/ui-components-component-library-text-field-text-field-stories-js--default-story#props) and [TextFieldBase](/docs/ui-components-component-library-text-field-base-text-field-base-stories-js--default-story#props) component props
+
+<ArgsTable of={TextFieldSearch} />
+
+### Search Icon Props
+
+`searchIconProps` allows for props to be passed to the search icon. Accepts all [Icon](/docs/ui-components-component-library-icon-icon-stories-js--default-story#props) component props.
+
+```jsx
+import { SIZES } from '../../../helpers/constants/design-system';
+import { TextField } from '../../ui/component-library/text-field';
+
+<TextFieldSearch
+  searchIconProps={{ size: SIZES.MD, 'data-testid': 'search-icon' }}
+/>;
+```
