@@ -262,10 +262,10 @@ const setupPageStreams = () => {
 };
 
 // The field below is used to ensure that replay is done only once for each restart.
-let REPLAY_ENABLED = false;
+let METAMASK_EXTENSION_CONNECT_SENT = false;
 
 const setupExtensionStreams = () => {
-  REPLAY_ENABLED = true;
+  METAMASK_EXTENSION_CONNECT_SENT = true;
   extensionPort = browser.runtime.connect({ name: CONTENT_SCRIPT });
   extensionStream = new PortStream(extensionPort);
   extensionStream.on('data', extensionStreamMessageListener);
@@ -474,11 +474,11 @@ function logStreamDisconnectWarning(remoteLabel, error) {
  */
 function extensionStreamMessageListener(msg) {
   if (
-    REPLAY_ENABLED &&
+    METAMASK_EXTENSION_CONNECT_SENT &&
     isManifestV3 &&
     msg.data.method === 'metamask_chainChanged'
   ) {
-    REPLAY_ENABLED = false;
+    METAMASK_EXTENSION_CONNECT_SENT = false;
     window.postMessage(
       {
         target: INPAGE, // the post-message-stream "target"
@@ -487,7 +487,7 @@ function extensionStreamMessageListener(msg) {
           name: PROVIDER, // the obj-multiplex channel name
           data: {
             jsonrpc: '2.0',
-            method: 'METAMASK_EXTENSION_STREAM_CONNECT',
+            method: 'METAMASK_EXTENSION_CONNECT_CAN_RETRY',
           },
         },
       },
