@@ -111,23 +111,33 @@ const throwErrorIfLastErrorFound = () => {
 /**
  * Sends a message to the dapp(s) content script to signal it can connect to MetaMask background as
  * the backend is not active. It is required to re-connect dapps after service worker re-activates.
+ * For non-dapp pages, the message will be sent and ignored.
  */
-const sendReadyMessageToActiveTab = async () => {
+const sendReadyMessageToTabs = async () => {
   try {
-    const tabs = await browser.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
+    const tabs = await browser.tabs.query({});
     throwErrorIfLastErrorFound();
 
-    if (!tabs?.[0]?.id) {
-      return;
+    /* TODO we should only sendMessage to dapp tabs, not all tabs. */
+    for (const tab of tabs) {
+      browser.tabs
+        .sendMessage(tab.id, {
+          name: EXTENSION_MESSAGES.READY,
+        })
+        .catch((e) => {
+          if (
+            e.message ===
+            'Could not establish connection. Receiving end does not exist.'
+          ) {
+            /** Safely ignore this error, as it means the tab may not be a dapp. */
+          } else {
+            throw new Error(e);
+          }
+        })
+        .finally(() => {
+          throwErrorIfLastErrorFound();
+        });
     }
-
-    await browser.tabs.sendMessage(tabs[0].id, {
-      name: EXTENSION_MESSAGES.READY,
-    });
-    throwErrorIfLastErrorFound();
   } catch (err) {
     log.error(err);
   }
@@ -135,7 +145,7 @@ const sendReadyMessageToActiveTab = async () => {
 
 if (isManifestV3) {
   browser.runtime.onConnect.addListener(initApp);
-  sendReadyMessageToActiveTab();
+  sendReadyMessageToTabs();
 } else {
   // initialization flow
   initialize().catch(log.error);
@@ -205,7 +215,7 @@ if (isManifestV3) {
 async function initialize(remotePort) {
   const initState = await loadStateFromPersistence();
   const initLangCode = await getFirstPreferredLangCode();
-  await setupController(initState, initLangCode, remotePort);
+  setupController(initState, initLangCode, remotePort);
   if (!isManifestV3) {
     await loadPhishingWarningPage();
   }
@@ -342,7 +352,6 @@ async function loadStateFromPersistence() {
  * @param {object} initState - The initial state to start the controller with, matches the state that is emitted from the controller.
  * @param {string} initLangCode - The region code for the language preferred by the current user.
  * @param {string} remoteSourcePort - remote application port connecting to extension.
- * @returns {Promise} After setup is complete.
  */
 function setupController(initState, initLangCode, remoteSourcePort) {
   //
@@ -697,8 +706,6 @@ function setupController(initState, initLangCode, remoteSourcePort) {
 
     updateBadge();
   }
-
-  return Promise.resolve();
 }
 
 //

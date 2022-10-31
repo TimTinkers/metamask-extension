@@ -5,7 +5,7 @@ import browser from 'webextension-polyfill';
 import PortStream from 'extension-port-stream';
 import { obj as createThoughStream } from 'through2';
 
-import { MESSAGE_TYPE } from '../../shared/constants/app';
+import { EXTENSION_MESSAGES, MESSAGE_TYPE } from '../../shared/constants/app';
 import { isManifestV3 } from '../../shared/modules/mv3.utils';
 import shouldInjectProvider from '../../shared/modules/provider-injection';
 
@@ -195,7 +195,7 @@ const setupPhishingExtStreams = () => {
   );
 
   // eslint-disable-next-line no-use-before-define
-  phishingExtPort.onDisconnect.addListener(resetPhishingStreamAndListeners);
+  phishingExtPort.onDisconnect.addListener(onDisconnectDestroyPhishingStreams);
 };
 
 /** Destroys all of the phishing extension streams */
@@ -210,14 +210,32 @@ const destroyPhishingExtStreams = () => {
 };
 
 /**
- * Resets the extension stream with new streams to channel with the phishing page streams,
- * and creates a new event listener to the reestablished extension port.
+ * This listener destroys the phishing extension streams when the extension port is disconnected,
+ * so that streams may be re-established later the phishing extension port is reconnected.
  */
-const resetPhishingStreamAndListeners = () => {
-  phishingExtPort.onDisconnect.removeListener(resetPhishingStreamAndListeners);
-
+const onDisconnectDestroyPhishingStreams = () => {
+  phishingExtPort.onDisconnect.removeListener(
+    onDisconnectDestroyPhishingStreams,
+  );
   destroyPhishingExtStreams();
-  setupPhishingExtStreams();
+};
+
+/**
+ * When the extension background is loaded it sends the EXTENSION_MESSAGES.READY message to the browser tabs.
+ * This listener/callback receives the message to set up the streams after service worker in-activity.
+ *
+ * @param {object} msg
+ * @param {string} msg.name - custom property and name to identify the message received
+ * @returns {Promise|false}
+ */
+const onMessageSetUpPhishingStreams = (msg) => {
+  if (msg.name === EXTENSION_MESSAGES.READY) {
+    setupPhishingExtStreams();
+    return Promise.resolve(
+      `MetaMask: handled "${EXTENSION_MESSAGES.READY}" for phishing streams`,
+    );
+  }
+  return false;
 };
 
 /**
@@ -228,6 +246,8 @@ const resetPhishingStreamAndListeners = () => {
 const initPhishingStreams = () => {
   setupPhishingPageStreams();
   setupPhishingExtStreams();
+
+  browser.runtime.onMessage.addListener(onMessageSetUpPhishingStreams);
 };
 
 /**
@@ -295,7 +315,7 @@ const setupExtensionStreams = () => {
   extensionPhishingStream.once('data', redirectToPhishingWarning);
 
   // eslint-disable-next-line no-use-before-define
-  extensionPort.onDisconnect.addListener(resetStreamAndListeners);
+  extensionPort.onDisconnect.addListener(onDisconnectDestroyStreams);
 };
 
 /** Destroys all of the extension streams */
@@ -403,22 +423,30 @@ const destroyLegacyExtensionStreams = () => {
   legacyExtPublicConfigChannel.destroy();
 };
 
-// When extension background is loaded it sends message 'METAMASK_EXTENSION_READY' to browser tabs
-// Function below helps to setup streams after service worker in-activity
-const activateStreams = (msg) => {
-  if (msg.name === 'METAMASK_EXTENSION_READY') {
+/**
+ * When the extension background is loaded it sends the EXTENSION_MESSAGES.READY message to the browser tabs.
+ * This listener/callback receives the message to set up the streams after service worker in-activity.
+ *
+ * @param {object} msg
+ * @param {string} msg.name - custom property and name to identify the message received
+ * @returns {Promise|false}
+ */
+const onMessageSetUpExtensionStreams = (msg) => {
+  if (msg.name === EXTENSION_MESSAGES.READY) {
     setupExtensionStreams();
     setupLegacyExtensionStreams();
+    return Promise.resolve(`MetaMask: handled ${EXTENSION_MESSAGES.READY}`);
   }
+
+  return false;
 };
-browser.runtime.onMessage.addListener(activateStreams);
 
 /**
- * Resets the extension stream with new streams to channel with the in page streams,
- * and creates a new event listener to the reestablished extension port.
+ * This listener destroys the extension streams when the extension port is disconnected,
+ * so that streams may be re-established later the extension port is reconnected.
  */
-const resetStreamAndListeners = () => {
-  extensionPort.onDisconnect.removeListener(resetStreamAndListeners);
+const onDisconnectDestroyStreams = () => {
+  extensionPort.onDisconnect.removeListener(onDisconnectDestroyStreams);
 
   destroyExtensionStreams();
   destroyLegacyExtensionStreams();
@@ -435,6 +463,8 @@ const initStreams = () => {
 
   setupExtensionStreams();
   setupLegacyExtensionStreams();
+
+  browser.runtime.onMessage.addListener(onMessageSetUpExtensionStreams);
 };
 
 // TODO:LegacyProvider: Delete
