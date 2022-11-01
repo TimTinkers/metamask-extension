@@ -107,7 +107,7 @@ function buildScopeForMockingRequests({
 }) {
   let rpcUrl;
   if (type === 'infura') {
-    rpcUrl = `https://${network}.infura.io/v3/${INFURA_PROJECT_ID}/`;
+    rpcUrl = `https://${network}.infura.io`;
   } else {
     rpcUrl = `http://localhost:8545/`;
   }
@@ -200,7 +200,8 @@ function mockRpcCall({ nockScope, request, response, error, delay, times }) {
       completeResponse = response.body;
     }
   }
-  let nockRequest = nockScope.post('/', {
+  const url = nockScope.basePath.includes('infura.io') ? `/v3/${INFURA_PROJECT_ID}` : '/';
+  let nockRequest = nockScope.post(url, {
     jsonrpc: '2.0',
     method,
     params,
