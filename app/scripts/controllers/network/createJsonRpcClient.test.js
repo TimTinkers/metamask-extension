@@ -3,7 +3,8 @@
  */
 import {
   testsForRpcMethodNotHandledByMiddleware,
-  testsForRpcMethodAssumingNoBlockParam
+  testsForRpcMethodAssumingNoBlockParam,
+  testsForRpcMethodSupportingBlockParam
 } from './provider-api-tests/shared-tests';
 
 describe('createJsonRpClient', () => {
@@ -19,6 +20,13 @@ describe('createJsonRpClient', () => {
 
     describe('eth_blockNumber', () => {
       testsForRpcMethodAssumingNoBlockParam('eth_blockNumber', {
+        providerType: 'custom'
+      });
+    });
+
+    describe('eth_call', () => {
+      testsForRpcMethodSupportingBlockParam('eth_call', {
+        blockParamIndex: 1,
         providerType: 'custom'
       });
     });

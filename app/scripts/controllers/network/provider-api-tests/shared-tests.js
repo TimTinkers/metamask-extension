@@ -673,7 +673,7 @@ export function testsForRpcMethodsThatCheckForBlockHashInResponse(
 /* eslint-disable-next-line jest/no-export */
 export function testsForRpcMethodSupportingBlockParam(
   method,
-  { blockParamIndex },
+  { blockParamIndex, providerType = 'infura' },
 ) {
   describe.each([
     ['given no block tag', 'none'],
@@ -691,7 +691,7 @@ export function testsForRpcMethodSupportingBlockParam(
       ];
       const mockResults = ['first result', 'second result'];
 
-      await withMockedCommunications(async (comms) => {
+      await withMockedCommunications({ type: providerType },async (comms) => {
         // The first time a block-cacheable request is made, the block-cache
         // middleware will request the latest block number through the block
         // tracker to determine the cache key. Later, the block-ref
@@ -711,7 +711,7 @@ export function testsForRpcMethodSupportingBlockParam(
           response: { result: mockResults[0] },
         });
 
-        const results = await withClient(({ makeRpcCallsInSeries }) =>
+        const results = await withClient({ type: providerType },({ makeRpcCallsInSeries }) =>
           makeRpcCallsInSeries(requests),
         );
 
@@ -726,7 +726,7 @@ export function testsForRpcMethodSupportingBlockParam(
       ];
       const mockResults = ['first result', 'second result'];
 
-      await withMockedCommunications(async (comms) => {
+      await withMockedCommunications({ type: providerType },async (comms) => {
         // Note that we have to mock these requests in a specific order.
         // The first block tracker request occurs because of the first RPC
         // request. The second block tracker request, however, does not
@@ -754,7 +754,7 @@ export function testsForRpcMethodSupportingBlockParam(
           response: { result: mockResults[1] },
         });
 
-        const results = await withClient(async (client) => {
+        const results = await withClient({ type: providerType },async (client) => {
           const firstResult = await client.makeRpcCall(requests[0]);
           // Proceed to the next iteration of the block tracker so that a
           // new block is fetched and the current block is updated.
@@ -776,7 +776,7 @@ export function testsForRpcMethodSupportingBlockParam(
         ];
         const mockResults = [emptyValue, 'some result'];
 
-        await withMockedCommunications(async (comms) => {
+        await withMockedCommunications({ type: providerType },async (comms) => {
           // The first time a block-cacheable request is made, the
           // block-cache middleware will request the latest block number
           // through the block tracker to determine the cache key. Later,
@@ -804,7 +804,7 @@ export function testsForRpcMethodSupportingBlockParam(
             response: { result: mockResults[1] },
           });
 
-          const results = await withClient(({ makeRpcCallsInSeries }) =>
+          const results = await withClient({ type: providerType },({ makeRpcCallsInSeries }) =>
             makeRpcCallsInSeries(requests),
           );
 
@@ -817,7 +817,7 @@ export function testsForRpcMethodSupportingBlockParam(
       const requests = [{ method }, { method }, { method }];
       const mockResults = ['first result', 'second result', 'third result'];
 
-      await withMockedCommunications(async (comms) => {
+      await withMockedCommunications({ type: providerType },async (comms) => {
         // The first time a block-cacheable request is made, the
         // block-cache middleware will request the latest block number
         // through the block tracker to determine the cache key. Later,
@@ -855,7 +855,7 @@ export function testsForRpcMethodSupportingBlockParam(
           response: { result: mockResults[2] },
         });
 
-        const results = await withClient(async (client) => {
+        const results = await withClient({ type: providerType },async (client) => {
           const resultPromises = [
             client.makeRpcCall(requests[0]),
             client.makeRpcCall(requests[1]),
@@ -879,7 +879,7 @@ export function testsForRpcMethodSupportingBlockParam(
 
     if (blockParamType === 'none') {
       it('throws a custom error if the request to Infura returns a 405 response', async () => {
-        await withMockedCommunications(async (comms) => {
+        await withMockedCommunications({ type: providerType },async (comms) => {
           const request = { method };
 
           // The first time a block-cacheable request is made, the
@@ -902,7 +902,7 @@ export function testsForRpcMethodSupportingBlockParam(
               httpStatus: 405,
             },
           });
-          const promiseForResult = withClient(async ({ makeRpcCall }) =>
+          const promiseForResult = withClient({ type: providerType },async ({ makeRpcCall }) =>
             makeRpcCall(request),
           );
 
@@ -913,7 +913,7 @@ export function testsForRpcMethodSupportingBlockParam(
       });
 
       it('throws a custom error if the request to Infura returns a 429 response', async () => {
-        await withMockedCommunications(async (comms) => {
+        await withMockedCommunications({ type: providerType },async (comms) => {
           const request = { method };
 
           // The first time a block-cacheable request is made, the
@@ -936,7 +936,7 @@ export function testsForRpcMethodSupportingBlockParam(
               httpStatus: 429,
             },
           });
-          const promiseForResult = withClient(async ({ makeRpcCall }) =>
+          const promiseForResult = withClient({ type: providerType },async ({ makeRpcCall }) =>
             makeRpcCall(request),
           );
 
@@ -947,7 +947,7 @@ export function testsForRpcMethodSupportingBlockParam(
       });
 
       it('throws a custom error if the request to Infura returns a response that is not 405, 429, 503, or 504', async () => {
-        await withMockedCommunications(async (comms) => {
+        await withMockedCommunications({ type: providerType },async (comms) => {
           const request = { method };
 
           // The first time a block-cacheable request is made, the
@@ -973,7 +973,7 @@ export function testsForRpcMethodSupportingBlockParam(
               httpStatus: 420,
             },
           });
-          const promiseForResult = withClient(async ({ makeRpcCall }) =>
+          const promiseForResult = withClient({ type: providerType },async ({ makeRpcCall }) =>
             makeRpcCall(request),
           );
 
@@ -985,7 +985,7 @@ export function testsForRpcMethodSupportingBlockParam(
 
       [503, 504].forEach((httpStatus) => {
         it(`retries the request to Infura up to 5 times if it returns a ${httpStatus} response, returning the successful result if there is one on the 5th try`, async () => {
-          await withMockedCommunications(async (comms) => {
+          await withMockedCommunications({ type: providerType },async (comms) => {
             const request = { method };
 
             // The first time a block-cacheable request is made, the
@@ -1024,7 +1024,7 @@ export function testsForRpcMethodSupportingBlockParam(
                 httpStatus: 200,
               },
             });
-            const result = await withClient(
+            const result = await withClient({ type: providerType },
               async ({ makeRpcCall, clock }) => {
                 return await waitForPromiseToBeFulfilledAfterRunningAllTimers(
                   makeRpcCall(request),
@@ -1038,7 +1038,7 @@ export function testsForRpcMethodSupportingBlockParam(
         });
 
         it(`causes a request to fail with a custom error if the request to Infura returns a ${httpStatus} response 5 times in a row`, async () => {
-          await withMockedCommunications(async (comms) => {
+          await withMockedCommunications({ type: providerType },async (comms) => {
             const request = { method };
 
             // The first time a block-cacheable request is made, the
@@ -1063,7 +1063,7 @@ export function testsForRpcMethodSupportingBlockParam(
               },
               times: 5,
             });
-            const promiseForResult = withClient(
+            const promiseForResult = withClient({ type: providerType },
               async ({ makeRpcCall, clock }) => {
                 return await waitForPromiseToBeFulfilledAfterRunningAllTimers(
                   makeRpcCall(request),
@@ -1082,7 +1082,7 @@ export function testsForRpcMethodSupportingBlockParam(
       ['ETIMEDOUT', 'ECONNRESET', 'SyntaxError'].forEach(
         (errorMessagePrefix) => {
           it(`retries the request to Infura up to 5 times if an "${errorMessagePrefix}" error is thrown while making the request, returning the successful result if there is one on the 5th try`, async () => {
-            await withMockedCommunications(async (comms) => {
+            await withMockedCommunications({ type: providerType },async (comms) => {
               const request = { method };
 
               // The first time a block-cacheable request is made, the
@@ -1118,7 +1118,7 @@ export function testsForRpcMethodSupportingBlockParam(
                   httpStatus: 200,
                 },
               });
-              const result = await withClient(
+              const result = await withClient({ type: providerType },
                 async ({ makeRpcCall, clock }) => {
                   return await waitForPromiseToBeFulfilledAfterRunningAllTimers(
                     makeRpcCall(request),
@@ -1132,7 +1132,7 @@ export function testsForRpcMethodSupportingBlockParam(
           });
 
           it(`causes a request to fail with a custom error if an "${errorMessagePrefix}" error is thrown while making the request to Infura 5 times in a row`, async () => {
-            await withMockedCommunications(async (comms) => {
+            await withMockedCommunications({ type: providerType },async (comms) => {
               const request = { method };
 
               // The first time a block-cacheable request is made, the
@@ -1154,7 +1154,7 @@ export function testsForRpcMethodSupportingBlockParam(
                 error: `${errorMessagePrefix}: Some message`,
                 times: 5,
               });
-              const promiseForResult = withClient(
+              const promiseForResult = withClient({ type: providerType },
                 async ({ makeRpcCall, clock }) => {
                   return await waitForPromiseToBeFulfilledAfterRunningAllTimers(
                     makeRpcCall(request),
@@ -1189,7 +1189,7 @@ export function testsForRpcMethodSupportingBlockParam(
       ];
       const mockResults = ['first result', 'second result'];
 
-      await withMockedCommunications(async (comms) => {
+      await withMockedCommunications({ type: providerType },async (comms) => {
         // The first time a block-cacheable request is made, the block-cache
         // middleware will request the latest block number through the block
         // tracker to determine the cache key. This block number doesn't
@@ -1200,7 +1200,7 @@ export function testsForRpcMethodSupportingBlockParam(
           response: { result: mockResults[0] },
         });
 
-        const results = await withClient(({ makeRpcCallsInSeries }) =>
+        const results = await withClient({ type: providerType },({ makeRpcCallsInSeries }) =>
           makeRpcCallsInSeries(requests),
         );
 
@@ -1215,7 +1215,7 @@ export function testsForRpcMethodSupportingBlockParam(
       ];
       const mockResults = ['first result', 'second result'];
 
-      await withMockedCommunications(async (comms) => {
+      await withMockedCommunications({ type: providerType },async (comms) => {
         // Note that we have to mock these requests in a specific order. The
         // first block tracker request occurs because of the first RPC
         // request. The second block tracker request, however, does not
@@ -1232,7 +1232,7 @@ export function testsForRpcMethodSupportingBlockParam(
           response: { result: mockResults[1] },
         });
 
-        const results = await withClient(async (client) => {
+        const results = await withClient({ type: providerType },async (client) => {
           const firstResult = await client.makeRpcCall(requests[0]);
           // Proceed to the next iteration of the block tracker so that a
           // new block is fetched and the current block is updated.
@@ -1254,7 +1254,7 @@ export function testsForRpcMethodSupportingBlockParam(
         ];
         const mockResults = [emptyValue, 'some result'];
 
-        await withMockedCommunications(async (comms) => {
+        await withMockedCommunications({ type: providerType },async (comms) => {
           // The first time a block-cacheable request is made, the latest block
           // number is retrieved through the block tracker first. It doesn't
           // matter what this is — it's just used as a cache key.
@@ -1268,7 +1268,7 @@ export function testsForRpcMethodSupportingBlockParam(
             response: { result: mockResults[1] },
           });
 
-          const results = await withClient(({ makeRpcCallsInSeries }) =>
+          const results = await withClient({ type: providerType },({ makeRpcCallsInSeries }) =>
             makeRpcCallsInSeries(requests),
           );
 
@@ -1294,7 +1294,7 @@ export function testsForRpcMethodSupportingBlockParam(
         ];
         const mockResults = ['first result', 'second result'];
 
-        await withMockedCommunications(async (comms) => {
+        await withMockedCommunications({ type: providerType },async (comms) => {
           // The first time a block-cacheable request is made, the latest
           // block number is retrieved through the block tracker first. It
           // doesn't matter what this is — it's just used as a cache key.
@@ -1304,7 +1304,7 @@ export function testsForRpcMethodSupportingBlockParam(
             response: { result: mockResults[0] },
           });
 
-          const results = await withClient(({ makeRpcCallsInSeries }) =>
+          const results = await withClient({ type: providerType },({ makeRpcCallsInSeries }) =>
             makeRpcCallsInSeries(requests),
           );
 
@@ -1315,7 +1315,7 @@ export function testsForRpcMethodSupportingBlockParam(
 
     if (blockParamType === 'block number') {
       it('does not reuse the result of a previous request if it was made with different arguments than this one', async () => {
-        await withMockedCommunications(async (comms) => {
+        await withMockedCommunications({ type: providerType },async (comms) => {
           const requests = [
             {
               method,
@@ -1340,7 +1340,7 @@ export function testsForRpcMethodSupportingBlockParam(
             response: { result: 'second result' },
           });
 
-          const results = await withClient(({ makeRpcCallsInSeries }) =>
+          const results = await withClient({ type: providerType },({ makeRpcCallsInSeries }) =>
             makeRpcCallsInSeries(requests),
           );
 
@@ -1349,7 +1349,7 @@ export function testsForRpcMethodSupportingBlockParam(
       });
 
       it('makes an additional request to Infura if the given block number matches the latest block number', async () => {
-        await withMockedCommunications(async (comms) => {
+        await withMockedCommunications({ type: providerType },async (comms) => {
           const request = {
             method,
             params: buildMockParamsWithBlockParamAt(blockParamIndex, '0x100'),
@@ -1365,7 +1365,7 @@ export function testsForRpcMethodSupportingBlockParam(
             response: { result: 'the result' },
           });
 
-          const result = await withClient(({ makeRpcCall }) =>
+          const result = await withClient({ type: providerType },({ makeRpcCall }) =>
             makeRpcCall(request),
           );
 
@@ -1374,7 +1374,7 @@ export function testsForRpcMethodSupportingBlockParam(
       });
 
       it('makes an additional request to Infura if the given block number is less than the latest block number', async () => {
-        await withMockedCommunications(async (comms) => {
+        await withMockedCommunications({ type: providerType },async (comms) => {
           const request = {
             method,
             params: buildMockParamsWithBlockParamAt(blockParamIndex, '0x50'),
@@ -1390,7 +1390,7 @@ export function testsForRpcMethodSupportingBlockParam(
             response: { result: 'the result' },
           });
 
-          const result = await withClient(({ makeRpcCall }) =>
+          const result = await withClient({ type: providerType },({ makeRpcCall }) =>
             makeRpcCall(request),
           );
 
@@ -1410,7 +1410,7 @@ export function testsForRpcMethodSupportingBlockParam(
       ];
       const mockResults = ['first result', 'second result'];
 
-      await withMockedCommunications(async (comms) => {
+      await withMockedCommunications({ type: providerType },async (comms) => {
         // The first time a block-cacheable request is made, the latest
         // block number is retrieved through the block tracker first. It
         // doesn't matter what this is — it's just used as a cache key.
@@ -1424,7 +1424,7 @@ export function testsForRpcMethodSupportingBlockParam(
           response: { result: mockResults[1] },
         });
 
-        const results = await withClient(({ makeRpcCallsInSeries }) =>
+        const results = await withClient({ type: providerType },({ makeRpcCallsInSeries }) =>
           makeRpcCallsInSeries(requests),
         );
 
