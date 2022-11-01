@@ -4,6 +4,7 @@ import { JsonRpcEngine } from 'json-rpc-engine';
 import { providerFromEngine } from 'eth-json-rpc-middleware';
 import EthQuery from 'eth-query';
 import createInfuraClient from '../createInfuraClient';
+import createJsonRpcClient from '../createJsonRpcClient';
 
 /**
  * @typedef {import('nock').Scope} NockScope
@@ -94,12 +95,21 @@ function debug(...args) {
  * Infura supports.
  *
  * @param {object} options - The options.
- * @param {string} options.network - The Infura network you're testing with
+ * @param {string} options.network - The network you're testing with
  * (default: "mainnet").
+ * @param {string} options.type - Infura or Custom
+ * (default: "infura").
  * @returns {NockScope} The nock scope.
  */
-function buildScopeForMockingInfuraRequests({ network = 'mainnet' } = {}) {
-  return nock(`https://${network}.infura.io`).filteringRequestBody((body) => {
+function buildScopeForMockingRequests({ network = 'mainnet', type = 'infura' }) {
+  let rpcUrl;
+  if (type === 'infura') {
+    rpcUrl = `https://${network}.infura.io/v3/${INFURA_PROJECT_ID}/`;
+  } else {
+    rpcUrl = `http://localhost:8545/`;
+  }
+
+  return nock(rpcUrl).filteringRequestBody((body) => {
     const copyOfBody = JSON.parse(body);
     // some ids are random, so remove them entirely from the request to
     // make it possible to mock these requests
@@ -121,7 +131,7 @@ async function mockNextBlockTrackerRequest({
   nockScope,
   blockNumber = DEFAULT_LATEST_BLOCK_NUMBER,
 }) {
-  await mockInfuraRpcCall({
+  await mockRpcCall({
     nockScope,
     request: { method: 'eth_blockNumber', params: [] },
     response: { result: blockNumber },
@@ -141,7 +151,7 @@ async function mockAllBlockTrackerRequests({
   nockScope,
   blockNumber = DEFAULT_LATEST_BLOCK_NUMBER,
 }) {
-  await mockInfuraRpcCall({
+  await mockRpcCall({
     nockScope,
     request: { method: 'eth_blockNumber', params: [] },
     response: { result: blockNumber },
@@ -169,7 +179,7 @@ async function mockAllBlockTrackerRequests({
  * expected to be made.
  * @returns {NockScope} The nock scope.
  */
-function mockInfuraRpcCall({
+function mockRpcCall({
   nockScope,
   request,
   response,
@@ -194,7 +204,7 @@ function mockInfuraRpcCall({
       completeResponse = response.body;
     }
   }
-  let nockRequest = nockScope.post(`/v3/${INFURA_PROJECT_ID}`, {
+  let nockRequest = nockScope.post("/", {
     jsonrpc: '2.0',
     method,
     params,
@@ -249,21 +259,21 @@ function makeRpcCall(ethQuery, request) {
  * is called with an object that allows you to mock different kinds of requests.
  * @returns {Promise<any>} The return value of the given function.
  */
-export async function withMockedInfuraCommunications(...args) {
+export async function withMockedCommunications(...args) {
   const [options, fn] = args.length === 2 ? args : [{}, args[0]];
-  const { network = 'mainnet' } = options;
+  const { network = 'mainnet', type = 'infura' } = options;
 
-  const nockScope = buildScopeForMockingInfuraRequests({ network });
+  const nockScope = buildScopeForMockingRequests({ network, type });
   const curriedMockNextBlockTrackerRequest = (localOptions) =>
     mockNextBlockTrackerRequest({ nockScope, ...localOptions });
   const curriedMockAllBlockTrackerRequests = (localOptions) =>
     mockAllBlockTrackerRequests({ nockScope, ...localOptions });
-  const curriedMockInfuraRpcCall = (localOptions) =>
-    mockInfuraRpcCall({ nockScope, ...localOptions });
+  const curriedMockRpcCall = (localOptions) =>
+    mockRpcCall({ nockScope, ...localOptions });
   const comms = {
     mockNextBlockTrackerRequest: curriedMockNextBlockTrackerRequest,
     mockAllBlockTrackerRequests: curriedMockAllBlockTrackerRequests,
-    mockInfuraRpcCall: curriedMockInfuraRpcCall,
+    mockRpcCall: curriedMockRpcCall,
   };
 
   try {
@@ -286,14 +296,23 @@ export async function withMockedInfuraCommunications(...args) {
  * on that object.
  * @returns {Promise<any>} The return value of the given function.
  */
-export async function withInfuraClient(...args) {
+export async function withClient(...args) {
   const [options, fn] = args.length === 2 ? args : [{}, args[0]];
-  const { network = 'mainnet' } = options;
+  const { network = 'mainnet', type = 'infura' } = options;
 
-  const { networkMiddleware, blockTracker } = createInfuraClient({
-    network,
-    projectId: INFURA_PROJECT_ID,
-  });
+  let clientUnderTest;
+  if (type === 'infura') {
+    clientUnderTest = createInfuraClient({
+      network,
+      projectId: INFURA_PROJECT_ID,
+    });
+  } else {
+    clientUnderTest = createJsonRpcClient({
+      rpcUrl: 'http://localhost:8545',
+      chain_id: "0x1"
+    });
+  }
+  const { networkMiddleware, blockTracker } = clientUnderTest;
 
   const engine = new JsonRpcEngine();
   engine.push(networkMiddleware);
