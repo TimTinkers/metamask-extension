@@ -392,13 +392,8 @@ export function testsForRpcMethodAssumingNoBlockParam(
                 );
               },
             );
-
-            const errMsg =
-              providerType === 'infura'
-                ? '^InfuraProvider - cannot complete request. All retries exhausted..+Gateway timeout'
-                : `Gateway timeout: Some error`;
             await expect(promiseForResult).rejects.toThrow(
-              new RegExp(errMsg, 'su'),
+              /^InfuraProvider - cannot complete request\\. All retries exhausted\\..+Gateway timeout/su,
             );
           },
         );
