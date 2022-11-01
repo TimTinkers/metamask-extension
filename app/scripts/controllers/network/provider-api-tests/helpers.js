@@ -101,7 +101,10 @@ function debug(...args) {
  * (default: "infura").
  * @returns {NockScope} The nock scope.
  */
-function buildScopeForMockingRequests({ network = 'mainnet', type = 'infura' }) {
+function buildScopeForMockingRequests({
+  network = 'mainnet',
+  type = 'infura',
+}) {
   let rpcUrl;
   if (type === 'infura') {
     rpcUrl = `https://${network}.infura.io/v3/${INFURA_PROJECT_ID}/`;
@@ -179,14 +182,7 @@ async function mockAllBlockTrackerRequests({
  * expected to be made.
  * @returns {NockScope} The nock scope.
  */
-function mockRpcCall({
-  nockScope,
-  request,
-  response,
-  error,
-  delay,
-  times,
-}) {
+function mockRpcCall({ nockScope, request, response, error, delay, times }) {
   // eth-query always passes `params`, so even if we don't supply this property,
   // for consistency with makeRpcCall, assume that the `body` contains it
   const { method, params = [], ...rest } = request;
@@ -204,7 +200,7 @@ function mockRpcCall({
       completeResponse = response.body;
     }
   }
-  let nockRequest = nockScope.post("/", {
+  let nockRequest = nockScope.post('/', {
     jsonrpc: '2.0',
     method,
     params,
@@ -309,7 +305,7 @@ export async function withClient(...args) {
   } else {
     clientUnderTest = createJsonRpcClient({
       rpcUrl: 'http://localhost:8545',
-      chain_id: "0x1"
+      chain_id: '0x1',
     });
   }
   const { networkMiddleware, blockTracker } = clientUnderTest;
