@@ -71,7 +71,6 @@ export function testsForRpcMethodNotHandledByMiddleware(
     };
     const expectedResult = 'the result';
 
-    console.log("provider is ", providerType);
     await withMockedCommunications({ type: providerType }, async (comms) => {
       // The first time a block-cacheable request is made, the latest block
       // number is retrieved through the block tracker first. It doesn't
