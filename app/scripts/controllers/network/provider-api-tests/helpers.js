@@ -200,7 +200,9 @@ function mockRpcCall({ nockScope, request, response, error, delay, times }) {
       completeResponse = response.body;
     }
   }
-  const url = nockScope.basePath.includes('infura.io') ? `/v3/${INFURA_PROJECT_ID}` : '/';
+  const url = nockScope.basePath.includes('infura.io')
+    ? `/v3/${INFURA_PROJECT_ID}`
+    : '/';
   let nockRequest = nockScope.post(url, {
     jsonrpc: '2.0',
     method,

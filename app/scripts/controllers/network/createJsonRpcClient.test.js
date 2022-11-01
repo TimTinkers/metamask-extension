@@ -59,7 +59,9 @@ describe('createJsonRpClient', () => {
     });
 
     describe('eth_estimateGas', () => {
-      testsForRpcMethodAssumingNoBlockParam('eth_estimateGas', { providerType: 'custom' });
+      testsForRpcMethodAssumingNoBlockParam('eth_estimateGas', {
+        providerType: 'custom',
+      });
     });
 
     describe('eth_feeHistory', () => {
@@ -77,13 +79,13 @@ describe('createJsonRpClient', () => {
     });
 
     describe('eth_gasPrice', () => {
-      testsForRpcMethodAssumingNoBlockParam('eth_gasPrice',{
+      testsForRpcMethodAssumingNoBlockParam('eth_gasPrice', {
         providerType: 'custom',
       });
     });
 
     describe('eth_getBlockByHash', () => {
-      testsForRpcMethodAssumingNoBlockParam('eth_getBlockByHash',{
+      testsForRpcMethodAssumingNoBlockParam('eth_getBlockByHash', {
         providerType: 'custom',
       });
     });
@@ -97,9 +99,10 @@ describe('createJsonRpClient', () => {
 
     describe('eth_getBlockTransactionCountByHash', () => {
       testsForRpcMethodAssumingNoBlockParam(
-        'eth_getBlockTransactionCountByHash',{
+        'eth_getBlockTransactionCountByHash',
+        {
           providerType: 'custom',
-        }
+        },
       );
     });
 
@@ -108,9 +111,10 @@ describe('createJsonRpClient', () => {
       // the 0th index, but this is not handled by our cache middleware
       // currently
       testsForRpcMethodAssumingNoBlockParam(
-        'eth_getBlockTransactionCountByNumber',{
+        'eth_getBlockTransactionCountByNumber',
+        {
           providerType: 'custom',
-        }
+        },
       );
     });
 
@@ -130,7 +134,7 @@ describe('createJsonRpClient', () => {
     });
 
     describe('eth_getFilterLogs', () => {
-      testsForRpcMethodAssumingNoBlockParam('eth_getFilterLogs',{
+      testsForRpcMethodAssumingNoBlockParam('eth_getFilterLogs', {
         providerType: 'custom',
       });
     });
@@ -154,7 +158,7 @@ describe('createJsonRpClient', () => {
         'eth_getTransactionByBlockHashAndIndex',
         {
           providerType: 'custom',
-        }
+        },
       );
     });
 
@@ -166,7 +170,7 @@ describe('createJsonRpClient', () => {
         'eth_getTransactionByBlockNumberAndIndex',
         {
           providerType: 'custom',
-        }
+        },
       );
     });
 
@@ -176,30 +180,36 @@ describe('createJsonRpClient', () => {
       testsForRpcMethodsThatCheckForBlockHashInResponse(method);
 
       it("refreshes the block tracker's current block if it is less than the block number that comes back in the response", async () => {
-        await withMockedCommunications({providerType: 'custom'}, async (comms) => {
-          const request = { method };
+        await withMockedCommunications(
+          { providerType: 'custom' },
+          async (comms) => {
+            const request = { method };
 
-          // The first time a block-cacheable request is made, the latest
-          // block number is retrieved through the block tracker first.
-          comms.mockNextBlockTrackerRequest({ blockNumber: '0x100' });
-          // This is our request.
-          comms.mockRpcCall({
-            request,
-            response: {
-              result: {
-                blockNumber: '0x200',
+            // The first time a block-cacheable request is made, the latest
+            // block number is retrieved through the block tracker first.
+            comms.mockNextBlockTrackerRequest({ blockNumber: '0x100' });
+            // This is our request.
+            comms.mockRpcCall({
+              request,
+              response: {
+                result: {
+                  blockNumber: '0x200',
+                },
               },
-            },
-          });
-          // The block-tracker-inspector middleware will request the latest
-          // block through the block tracker again.
-          comms.mockNextBlockTrackerRequest({ blockNumber: '0x300' });
+            });
+            // The block-tracker-inspector middleware will request the latest
+            // block through the block tracker again.
+            comms.mockNextBlockTrackerRequest({ blockNumber: '0x300' });
 
-          await withClient({providerType: 'custom'}, async ({ makeRpcCall, blockTracker }) => {
-            await makeRpcCall(request);
-            expect(blockTracker.getCurrentBlock()).toStrictEqual('0x300');
-          });
-        });
+            await withClient(
+              { providerType: 'custom' },
+              async ({ makeRpcCall, blockTracker }) => {
+                await makeRpcCall(request);
+                expect(blockTracker.getCurrentBlock()).toStrictEqual('0x300');
+              },
+            );
+          },
+        );
       });
     });
 
@@ -216,35 +226,41 @@ describe('createJsonRpClient', () => {
       testsForRpcMethodsThatCheckForBlockHashInResponse(method);
 
       it("refreshes the block tracker's current block if it is less than the block number that comes back in the response", async () => {
-        await withMockedCommunications({providerType: 'custom'}, async (comms) => {
-          const request = { method };
+        await withMockedCommunications(
+          { providerType: 'custom' },
+          async (comms) => {
+            const request = { method };
 
-          // The first time a block-cacheable request is made, the latest
-          // block number is retrieved through the block tracker first.
-          comms.mockNextBlockTrackerRequest({ blockNumber: '0x100' });
-          // This is our request.
-          comms.mockRpcCall({
-            request,
-            response: {
-              result: {
-                blockNumber: '0x200',
+            // The first time a block-cacheable request is made, the latest
+            // block number is retrieved through the block tracker first.
+            comms.mockNextBlockTrackerRequest({ blockNumber: '0x100' });
+            // This is our request.
+            comms.mockRpcCall({
+              request,
+              response: {
+                result: {
+                  blockNumber: '0x200',
+                },
               },
-            },
-          });
-          // The block-tracker-inspector middleware will request the latest
-          // block through the block tracker again.
-          comms.mockNextBlockTrackerRequest({ blockNumber: '0x300' });
+            });
+            // The block-tracker-inspector middleware will request the latest
+            // block through the block tracker again.
+            comms.mockNextBlockTrackerRequest({ blockNumber: '0x300' });
 
-          await withClient({providerType: 'custom'}, async ({ makeRpcCall, blockTracker }) => {
-            await makeRpcCall(request);
-            expect(blockTracker.getCurrentBlock()).toStrictEqual('0x300');
-          });
-        });
+            await withClient(
+              { providerType: 'custom' },
+              async ({ makeRpcCall, blockTracker }) => {
+                await makeRpcCall(request);
+                expect(blockTracker.getCurrentBlock()).toStrictEqual('0x300');
+              },
+            );
+          },
+        );
       });
     });
 
     describe('eth_getUncleByBlockHashAndIndex', () => {
-      testsForRpcMethodAssumingNoBlockParam('eth_getUncleByBlockHashAndIndex',{
+      testsForRpcMethodAssumingNoBlockParam('eth_getUncleByBlockHashAndIndex', {
         providerType: 'custom',
       });
     });
@@ -253,9 +269,10 @@ describe('createJsonRpClient', () => {
       // NOTE: eth_getUncleByBlockNumberAndIndex does take a block param at the
       // 0th index, but this is not handled by our cache middleware currently
       testsForRpcMethodAssumingNoBlockParam(
-        'eth_getUncleByBlockNumberAndIndex',{
+        'eth_getUncleByBlockNumberAndIndex',
+        {
           providerType: 'custom',
-        }
+        },
       );
     });
 
@@ -268,7 +285,7 @@ describe('createJsonRpClient', () => {
     describe('eth_getUncleCountByBlockNumber', () => {
       // NOTE: eth_getUncleCountByBlockNumber does take a block param at the 0th
       // index, but this is not handled by our cache middleware currently
-      testsForRpcMethodAssumingNoBlockParam('eth_getUncleCountByBlockNumber',{
+      testsForRpcMethodAssumingNoBlockParam('eth_getUncleCountByBlockNumber', {
         providerType: 'custom',
       });
     });
@@ -311,7 +328,7 @@ describe('createJsonRpClient', () => {
     describe('eth_newPendingTransactionFilter', () => {
       testsForRpcMethodNotHandledByMiddleware(
         'eth_newPendingTransactionFilter',
-        { numberOfParameters: 0, providerType: 'custom'},
+        { numberOfParameters: 0, providerType: 'custom' },
       );
     });
 
