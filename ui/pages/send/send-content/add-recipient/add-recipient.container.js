@@ -36,7 +36,7 @@ function mapStateToProps(state) {
 
   const addressBook = getAddressBook(state);
 
-  const txList = currentNetworkTxListSelector(state).reverse();
+  const txList = [...currentNetworkTxListSelector(state)].reverse();
 
   const nonContacts = addressBook
     .filter(({ name }) => !name)
